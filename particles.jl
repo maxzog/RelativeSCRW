@@ -18,14 +18,42 @@ function write_parts(dir::String, case::Case)
    X = [p.r for p in case.ps]
    fn = dir * "/r_" * string(case.step, pad=5) * ".txt"
    writedlm(fn, X)
+   X = [p.w for p in case.ps]
+   fn = dir * "/w_" * string(case.step, pad=5) * ".txt"
+   writedlm(fn, X)
+end
+
+function load_parts(dir::String, step::Int)
+   # Load position data
+   fn=dir*"r_"*string(step, pad=5)*".txt"
+   R = readdlm(fn)
+   # Get number of particles
+   np = size(R)[1]
+   # Load velocity data
+   fn=dir*"w_"*string(step, pad=5)*".txt"
+   W = readdlm(fn)
+   # Make sure dimensions match up
+   @assert(np == size(W)[1])
+   # Prep vector to store particles
+   ps = Vector{ParticlePair}(undef, np)
+   # Populate the particle vector
+   for i in 1:np
+      r = R[i,:]
+      w = W[i,:]
+      id = i
+      inBounds = true
+      ps[i] = ParticlePair(id, r, w, inBounds)
+   end
+   return ps
 end
 
 function kernel(r::Vector{Float64}; rc = 2.0)
-   if norm(r) > rc 
-      return 0.0
-   else
-      return 1.0 - norm(r)/rc
-   end
+   return exp(-0.5 * norm(r)^2 / (6.2832/16)^2)
+   # if norm(r) > rc 
+   #    return 0.0
+   # else
+   #    return 1.0 - norm(r)/rc
+   # end
 end
 
 #TODO: Add in fully-mixed correction term
