@@ -7,13 +7,31 @@ include("./particles.jl")
 function main()
    t = 0.0; dt = 0.0; tf = 0.0; stepf = 0
 
+   step = 9000
+   L = 2pi
+   dir = "./outs_ss/"
+  
+   ps  = load_parts(dir, step)
+   np  = lastindex(ps)
+   sim = Case(L, t, tf, dt, stepf, step, np, ps)
+
+   rv, W1_r = mean_w1(sim)
+   rv, W2_r = mean_w2(sim)
+
+   writedlm("./stats/w1.txt", [rv W1_r])
+   writedlm("./stats/w2.txt", [rv W2_r])
+end
+
+function main_time_averaged()
+   t = 0.0; dt = 0.0; tf = 0.0; stepf = 0
+
    L = 2pi
    dir = "./outs_ss/"
 
    w1m = zeros(64)
    w2m = zeros(64)
    c = 0
-   for step in 10000:250:30000
+   for step in 10000:250:40000
       println("Step :: ", step)
       ps  = load_parts(dir, step)
       np  = lastindex(ps)
@@ -71,4 +89,4 @@ function mean_w2(sim::Case)
    return rv, W2_r
 end
 
-main()
+main_time_averaged()

@@ -8,10 +8,15 @@ function init_parts(L::Float64, np::Int)
 end
 
 function random_position(L::Float64)
-   random_direction = randn(3)
-   random_direction = random_direction / norm(random_direction)
-   random_radii = rand(3).^(1.0/3.0)
-   return L*random_direction.*random_radii
+   isInSphere=false
+   point=[0.0,0.0,0.0]
+   while !isInSphere
+      point = rand(Uniform(-L,L), 3)
+      if norm(point) <= L
+         isInSphere=true
+      end
+   end
+   return point
 end
 
 function write_parts(dir::String, case::Case)
@@ -49,18 +54,14 @@ end
 
 function kernel(r::Vector{Float64}; rc = 2.0)
    return exp(-0.5 * norm(r)^2 / (6.2832/16)^2)
-   # if norm(r) > rc 
-   #    return 0.0
-   # else
-   #    return 1.0 - norm(r)/rc
-   # end
 end
 
 #TODO: Add in fully-mixed correction term
 function update_w!(p::ParticlePair, dt::Float64, dW::Normal{Float64})
+   dSf = (S_f(norm(p.r)+0.001) - S_f(norm(p.r)-0.001)) / 0.002
    rho = kernel(p.r)
    dWi = rand(dW, 3); dWj = rand(dW, 3)
-   p.w = (1.0 - a*dt)*p.w + b*((1.0 - rho)*dWi + (rho - 1.0)*dWj)/sqrt(1.0 + rho^2)
+   p.w = (1.0 - a*dt)*p.w + b*((1.0 - rho)*dWi + (rho - 1.0)*dWj)/sqrt(1.0 + rho^2) - dSf*12.926*dt*ones(3)
 end
 
 function update_r!(p::ParticlePair, dt::Float64, L::Float64)
@@ -76,3 +77,13 @@ function reset_r!(p::ParticlePair, L::Float64)
       p.inBounds = true
    end
 end
+
+function S_f(r; WIDTH=6.2832/16)
+   t1 = WIDTH^3*pi^1.5*erf(40/WIDTH)^3
+   t2 = 0.5*WIDTH^3*pi^1.5*erf(40/WIDTH)^2*(erf((40-r)/WIDTH)+erf((40+r)/WIDTH))
+   t3 = 0.5*WIDTH^3*exp(-r^2/(2*WIDTH)^2)*pi^1.5*erf(40/WIDTH)^2*(erf((80-r)/2/WIDTH)+erf((80+r)/2/WIDTH))
+   area = 2*sqrt(2)*WIDTH^3*pi^1.5*erf(20*sqrt(2)/WIDTH)^3
+   sum = sqrt(2) * (t1 + t2 - 2*t3) / area
+   return sum
+end
+

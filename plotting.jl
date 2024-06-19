@@ -3,13 +3,13 @@ using Plots, DelimitedFiles
 
 function main()
    a = Animation()
-   for i in 0:250:30000
+   for i in 250:250:40000
       println("Step :: ", i)
-      fn = "./outs_ss/r_"*string(i, pad=5)*".txt"
+      fn = "./outs_testing/r_"*string(i, pad=5)*".txt"
       plt = get_frame(fn)
       frame(a, plt)
    end
-   gif(a, "./img/parts_ss.gif")
+   gif(a, "./img/parts_testing.gif")
 end
 
 function get_frame(fn::String)
