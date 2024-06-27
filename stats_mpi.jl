@@ -4,39 +4,6 @@ using Distributions, LinearAlgebra, DelimitedFiles
 include("./classes.jl")
 include("./particles.jl")
 
-function get_w1!(sim::Case; nb = 64::Int)
-   bw = sim.L / nb
-   for p in sim.ps
-      ind = Int(floor(norm(p.r) / bw) + 1)
-      ind = minimum([ind, nb])
-      sim.w1[ind] += dot(p.r/norm(p.r), p.w)
-      sim.counts[ind] += 1
-   end
-   for i in 1:nb
-      if sim.counts[i] > 0
-         sim.w1[i] /= sim.counts[i]
-      end
-   end
-   return sim
-end
-
-function get_w2!(sim::Case; nb = 64::Int)
-   bw = sim.L / nb
-   for p in sim.ps
-      ind = Int(floor(norm(p.r) / bw) + 1)
-      ind = minimum([ind, nb])
-      sim.w2[ind] += dot(p.r/norm(p.r), p.w)^2
-      sim.counts[ind] += 1
-   end
-   for i in 1:nb
-      if sim.counts[i] > 0
-         sim.w2[i] /= sim.counts[i]
-      end
-   end
-   return sim
-end
-
-
 function get_w1!(sim::Case, s::Int, e::Int; nb = 64::Int)
    bw = sim.L / nb
    for i in s:e
@@ -70,6 +37,7 @@ function get_w2!(sim::Case, s::Int, e::Int; nb = 64::Int)
    end
    return sim
 end
+
 
 
 

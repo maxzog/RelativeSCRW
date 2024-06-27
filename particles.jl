@@ -19,6 +19,14 @@ function random_position(L::Float64)
    return point
 end
 
+function write_parts(R::Vector{Float64}, W::Vector{Float64}, dir::String, step::Int)
+   np = Int(length(R)/3)
+   fn = dir * "/r_" * string(step, pad=5) * ".txt"
+   writedlm(fn, reshape(R, (np, 3)))
+   fn = dir * "/w_" * string(step, pad=5) * ".txt"
+   writedlm(fn, reshape(W, (np, 3)))
+end
+
 function write_parts(dir::String, case::Case)
    X = [p.r for p in case.ps]
    fn = dir * "/r_" * string(case.step, pad=5) * ".txt"
@@ -57,11 +65,14 @@ function kernel(r::Vector{Float64}; rc = 2.0)
 end
 
 #TODO: Add in fully-mixed correction term
-function update_w!(p::ParticlePair, dt::Float64, dW::Normal{Float64})
+function update_w!(p::ParticlePair, dt::Float64, dW::Normal{Float64}, sim::Case)
    dSf = (S_f(norm(p.r)+0.001) - S_f(norm(p.r)-0.001)) / 0.002
+   dmean_w = (sim.w1[2:end] - sim.w1[1:end-1]) / (sim.rv[2]-sim.rv[1])
+   ind = Int(floor(norm(p.r)/(sim.rv[2]-sim.rv[1]))) + 1
+   ind = minimum([ind, lastindex(dmean_w)])
    rho = kernel(p.r)
    dWi = rand(dW, 3); dWj = rand(dW, 3)
-   p.w = (1.0 - a*dt)*p.w + b*((1.0 - rho)*dWi + (rho - 1.0)*dWj)/sqrt(1.0 + rho^2) - dSf*12.926*dt*ones(3)
+   p.w = (1.0 - a*dt)*p.w + b*((1.0 - rho)*dWi + (rho - 1.0)*dWj)/sqrt(1.0 + rho^2) - (dSf*12.926 + dmean_w[ind]^2)*p.r/norm(p.r)*dt
 end
 
 function update_r!(p::ParticlePair, dt::Float64, L::Float64)
